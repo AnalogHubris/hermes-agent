@@ -72,6 +72,9 @@ jobs:
           fetch-tags: true
           sparse-checkout: scripts/sandbox/pick-release-tags.sh
           sparse-checkout-cone-mode: false
+      # Partial clones (filter: blob:none) can skip tag refs on some git versions
+      # even with fetch-tags: true — fetch them explicitly as a belt-and-braces fix.
+      - run: git fetch --tags --force origin
       - id: pick
         run: |
           set -euo pipefail
