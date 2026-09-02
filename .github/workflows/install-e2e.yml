@@ -74,7 +74,19 @@ jobs:
           sparse-checkout-cone-mode: false
       # Partial clones (filter: blob:none) can skip tag refs on some git versions
       # even with fetch-tags: true — fetch them explicitly as a belt-and-braces fix.
-      - run: git fetch --tags --force origin
+      - name: Fetch tags (retry on 429)
+        run: |
+          set -euo pipefail
+          # Tags may already be present via checkout's fetch-tags; only fetch if missing.
+          if [ -z "$(git tag --list 'v*')" ]; then
+            for i in 1 2 3 4 5; do
+              if git fetch --tags --force origin; then break; fi
+              echo "fetch attempt $i failed (likely 429); sleeping $((i*15))s"
+              sleep $((i*15))
+            done
+          else
+            echo "tags already present: $(git tag --list 'v*' | wc -l)"
+          fi
       - id: pick
         run: |
           set -euo pipefail
